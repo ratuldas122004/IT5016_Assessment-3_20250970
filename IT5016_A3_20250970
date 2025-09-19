@@ -1,0 +1,110 @@
+class RequisitionSystem:
+    # ---------- Class-level attributes ----------
+    unique_id = 10000   # Tracks unique IDs for requisitions (SRP: only handles ID management)
+    submitted_req = 0   # Total requisitions submitted (DRY: central counter avoids duplicates)
+    approved_req = 0    # Total approved requisitions
+    pending_req = 0     # Total pending requisitions
+    not_approved_req = 0 # Total rejected requisitions
+    requisition_list = [] # Stores all requisition objects (Separation of Concerns: storage separate from logic)
+
+    def __init__(self):
+        RequisitionSystem.unique_id += 1  # Auto-increment requisition ID (KISS: simple counter, no complex logic)
+        self.requisition_id = RequisitionSystem.unique_id
+        self.status = "Pending"  # Default state (KISS: clear)
+        self.approval_ref = "Not Available" # Placeholder until approval (YAGNI: only filled when needed)
+        self.total = 0 # Running total of item prices (SRP: only handles cost tracking)
+
+        self.staff_info()  # Collect staff details (Separation of Concerns: separate method)
+        self.requisitions_details() # Collect requisition details (SRP: this method only manages items)
+        RequisitionSystem.submitted_req += 1 # Update global counter (DRY: handled once centrally)
+
+        RequisitionSystem.requisition_list.append(self) 
+
+    def staff_info(self):
+        # Collect staff-related information (SRP: only staff info here)
+        self.date = input("Enter the date: ") # KISS: straightforward user input
+        self.staff_id = input("Enter Staff ID: ") # KISS: simple ID collection
+        self.staff_name = input("Enter your name: ") # KISS: simple, readable
+
+    def requisitions_details(self):
+        self.total = 0  # Reset total (SRP: ensures correct calculation per requisition)
+        opt = int(input("Enter number of items: ")) # KISS: clear prompt for user
+        while opt > 0:  # Loop for number of items (KISS: simple loop, no complex iterator)
+            item_name = input("Enter Item Name: ") # KISS: minimal, only asks for what is needed
+            item_price = float(input("Enter Item Price: ")) # KISS: direct numeric input
+            self.total += item_price # DRY: single place where total is updated
+            opt -= 1 # YAGNI: reduce loop counter, nothing extra
+        self.requisition_approval() # Separation of Concerns: approval logic separate
+
+    def requisition_approval(self):
+        # Approval rule: auto-approve if under $500 (KISS: simple threshold check)
+        if self.total < 500:
+            self.status = "Approved"
+            self.approval_ref = f"{self.staff_id}{str(self.requisition_id)[-3:]}" 
+            # DRY: approval ref generated in one place only
+            RequisitionSystem.approved_req += 1
+        else:
+            self.status = "Pending" # Keeps logic simple, no overengineering
+            RequisitionSystem.pending_req += 1
+
+    def respond_requisition(self, response):
+        # Manager’s decision for pending requisition (SRP: this method only handles response)
+        if self.status == "Pending": # Separation of Concerns: only updates pending ones
+            RequisitionSystem.pending_req -= 1 # DRY: central update of counter
+            if response == "Approved":
+                self.status = "Approved"
+                self.approval_ref = f"{self.staff_id}{str(self.requisition_id)[-3:]}" # DRY : central update of counter
+                RequisitionSystem.approved_req += 1
+            elif response == "Not approved":
+                self.status = "Not approved"
+                self.approval_ref = "Not available" # KISS: no extra data when rejected
+                RequisitionSystem.not_approved_req += 1
+            print("The status has been updated") # Clean Code: clear feedback
+        else:
+            print("No pending requisitions\n") # KISS: simple error handling
+
+    def display_requisitions():
+        # Displays all requisitions (Separation of Concerns: reporting separated from logic)
+        for r in RequisitionSystem.requisition_list:
+            print(f"\nDate: {r.date}") # Clean Code: easy to read
+            print(f"Requisition ID: {r.requisition_id}")
+            print(f"Staff ID: {r.staff_id}")
+            print(f"Staff Name: {r.staff_name}")
+            print(f"Total: ${r.total}")
+            print(f"Status: {r.status}")
+            print(f"Approval Reference Number: {r.approval_ref}")
+
+    def requisition_statistic():
+        # Displays counters (SRP: this method only shows statistics)
+        print("\nStatistics:")
+        print("Displaying the Requisition Statistics")
+        print(f"The total number of requisitions submitted: {RequisitionSystem.submitted_req}")
+        print(f"The total number of approved requisitions: {RequisitionSystem.approved_req}")
+        print(f"The total number of pending requisitions: {RequisitionSystem.pending_req}")
+        print(f"The total number of not approved requisitions: {RequisitionSystem.not_approved_req}")
+
+
+# ----------------- MAIN PROGRAM -----------------
+if __name__ == '__main__':
+    print("\n*********WELCOME*********")
+    while True:
+        print("\n")
+        choice = input("What do you want to do?\n1. Submit Requisition\n2. Display Requisitions\n3. Display Statistics\n4. Approve Requisition\n0. Exit\nChoose: ")
+
+        if choice == "1":
+            r = RequisitionSystem()  # KISS: single line to create requisition
+        elif choice == "2":
+            RequisitionSystem.display_requisitions() # Clean Code: descriptive method name
+        elif choice == "3":
+            RequisitionSystem.requisition_statistic() # Separation of Concerns
+        elif choice == "4":            
+            for r in RequisitionSystem.requisition_list:
+                if r.status == "Pending": # Clean Code: readable condition
+                    response = input(f"\nManager response for {r.staff_name}'s requisition (Approved/Not approved): ")
+                    r.respond_requisition(response) # SRP: delegate responsibility
+        elif choice == "0":
+            break # KISS: simple exit
+        else:
+            print("Invalid choice\n") # Clean Code: clear feedback
+
+    print("Thank you for using this system\n") # Clean Code: graceful exit
