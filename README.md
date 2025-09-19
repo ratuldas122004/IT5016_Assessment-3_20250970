@@ -46,3 +46,7 @@ The program also follows the SDLC process:
 4. Implementation – Wrote the Python code
 5. Testing – Tried different inputs and approval scenarios
 6. Maintenance – Easy to change approval rules or outputs later
+
+Conclusion
+This project shows how using software design principles makes the code simple, clean, and easy to update. By following principles like KISS, DRY, and SRP, the program is easier for beginners and developers to understand.
+
